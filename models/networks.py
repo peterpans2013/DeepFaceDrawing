@@ -246,6 +246,12 @@ class DecoderGenerator_image_Res(nn.Module):
 
         return ten
 
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
+
     # def __call__(self, *args, **kwargs):
     #     return super(DecoderGenerator_image_Res, self).__call__(*args, **kwargs)
 
@@ -302,6 +308,13 @@ class DecoderGenerator_feature_Res(nn.Module):
         ten = self.conv(ten)
 
         return ten
+    
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
+
 
 # decoder block (used in the decoder)
 class DecoderBlock(nn.Module):
@@ -318,6 +331,13 @@ class DecoderBlock(nn.Module):
     def execute(self, ten):
         ten = self.conv(ten)
         return ten
+
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
+
 
 # encoder block (used in encoder and discriminator)
 class EncoderBlock(nn.Module):
@@ -343,6 +363,13 @@ class EncoderBlock(nn.Module):
             # print(ten.shape)
             ten = self.relu(ten)
             return ten
+
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
+
 
 class GlobalGenerator(nn.Module):
 
@@ -375,6 +402,13 @@ class GlobalGenerator(nn.Module):
     def execute(self, input):
         return self.model(input)
 
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
+
+
 ##############################################################################
 # Losses
 ##############################################################################
@@ -384,8 +418,8 @@ class ToTensor:
         pass
 
     def __call__(self, img):
-        from jittor.transform import to_tensor
-        return to_tensor(img)
+        from torchvison import transforms
+        return transforms.ToTensor(img)
 
 class GANLoss(nn.Module):
 

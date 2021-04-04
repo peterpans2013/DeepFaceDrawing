@@ -13,7 +13,7 @@ def weights_init(m):
 
 def get_norm_layer(norm_type='instance'):
     if (norm_type == 'batch'):
-        norm_layer = nn.BatchNorm
+        norm_layer = nn.BatchNorm2d
     elif (norm_type == 'instance'):
         norm_layer = nn.InstanceNorm2d
     else:
@@ -159,7 +159,7 @@ class  EncoderGenerator_Res(nn.Module):
 
         activation = nn.ReLU()
         padding_type='reflect'
-        norm_layer=nn.BatchNorm
+        norm_layer=nn.BatchNorm2d
 
         # encode
         layers_list.append(EncoderBlock(channel_in=input_nc, channel_out=32, kernel_size=4, padding=1, stride=2))  # 176 176 
@@ -202,7 +202,7 @@ class DecoderGenerator_image_Res(nn.Module):
 
         activation = nn.ReLU()
         padding_type='reflect'
-        norm_layer=nn.BatchNorm
+        norm_layer=nn.BatchNorm2d
 
         self.fc = nn.Sequential(nn.Linear(in_features=latent_dim, out_features=longsize))
         layers_list = []
@@ -252,7 +252,7 @@ class DecoderGenerator_feature_Res(nn.Module):
 
         activation = nn.ReLU()
         padding_type='reflect'
-        norm_layer=nn.BatchNorm
+        norm_layer=nn.BatchNorm2d
 
         self.fc = nn.Sequential(nn.Linear(in_features=latent_dim, out_features=longsize))
         layers_list = []
@@ -302,7 +302,7 @@ class DecoderBlock(nn.Module):
         super(DecoderBlock, self).__init__()
         layers_list = []
         layers_list.append(nn.ConvTranspose(channel_in, channel_out, kernel_size, padding=padding, stride=stride, output_padding=output_padding))
-        layers_list.append(nn.BatchNorm(channel_out, momentum=0.9))
+        layers_list.append(nn.BatchNorm2d(channel_out, momentum=0.9))
         if (norelu == False):
             layers_list.append(nn.LeakyReLU(1))
         self.conv = nn.Sequential(*layers_list)
@@ -317,7 +317,7 @@ class EncoderBlock(nn.Module):
         super(EncoderBlock, self).__init__()
         # convolution to halve the dimensions
         self.conv = nn.Conv(channel_in, channel_out, kernel_size, padding=padding, stride=stride)
-        self.bn = nn.BatchNorm(channel_out, momentum=0.9)
+        self.bn = nn.BatchNorm2d(channel_out, momentum=0.9)
         self.relu = nn.LeakyReLU(1)
 
     def execute(self, ten, out=False, t=False):

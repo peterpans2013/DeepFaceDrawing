@@ -424,5 +424,3 @@ class GANLoss(nn.Module):
         else:
             target_tensor = self.get_target_tensor(input[(- 1)], target_is_real)
             return self.loss(input[(- 1)], target_tensor)
-
-print("Read file Successfully!")

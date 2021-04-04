@@ -95,5 +95,3 @@ class InferenceModel(Combine_Model):
     def forward(self, inp):
         label, image = inp
         return self.inference(label, image)
-
-print("Read file successfully!")

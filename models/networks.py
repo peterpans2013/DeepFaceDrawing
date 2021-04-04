@@ -182,12 +182,12 @@ class  EncoderGenerator_Res(nn.Module):
         for m in self.modules():
             weights_init_normal(m)
 
-    def execute(self, ten):
+    def forward(self, ten):
         # ten = ten[:,:,:]
         # ten2 = jt.reshape(ten,[ten.size()[0],-1])
         # print(ten.shape, ten2.shape)
         ten = self.conv(ten)
-        ten = jt.reshape(ten,[ten.size()[0],-1])
+        ten = torch.reshape(ten,[ten.size()[0],-1])
         # print(ten.shape,self.longsize)
         mu = self.fc_mu(ten)
         # logvar = self.fc_var(ten)
@@ -418,8 +418,8 @@ class ToTensor:
         pass
 
     def __call__(self, img):
-        from torchvison import transforms
-        return transforms.functional.to_tensor(img)
+        import torchvision.transforms.functional as TF
+        return TF.to_tensor(img)
 
 class GANLoss(nn.Module):
 

@@ -7,6 +7,7 @@ import torch
 from torch import nn
 from torch.nn import init
 import torchvision as transforms
+import torchvision.transforms.functional as TF
 # from pdb import set_trace as st
 # import heapq
 from numpy.linalg import solve
@@ -71,7 +72,7 @@ class AE_Model(nn.Module):
         input_image = input_image.transpose(2,0,1)
         input_image = np.expand_dims(input_image, axis=0)
         input_image = input_image.astype('float32')
-        input_image = transforms.ToTensor(np.array(input_image))
+        input_image = TF.to_tensor(np.squeeze(input_image))
         # print(input_image.shape)
         mus_mouth = self.net_encoder(input_image)
 

@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import os
-import networks
+from . import networks
 # from scipy.ndimage import median_filter
 import torch
 from torch import nn

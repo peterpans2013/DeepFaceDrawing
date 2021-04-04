@@ -3,6 +3,7 @@ from torch import nn
 import functools
 import numpy as np
 
+
 def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -191,6 +192,12 @@ class  EncoderGenerator_Res(nn.Module):
         mu = self.fc_mu(ten)
         # logvar = self.fc_var(ten)
         return mu#,logvar
+        
+    def load(path: str):
+    ''' loads an object from a file.
+    '''
+        model_dict = pickle.loads(path)
+        return model_dict
 
 class DecoderGenerator_image_Res(nn.Module):
     def __init__(self, norm_layer, image_size, output_nc, latent_dim=512):  

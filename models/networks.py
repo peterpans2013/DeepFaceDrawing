@@ -3,7 +3,7 @@ from torch import nn
 import functools
 import numpy as np
 
-def weights_init(m):
+def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
         torch.nn.init.normal_(m.weight, 0.0, 0.02)

@@ -194,10 +194,10 @@ class  EncoderGenerator_Res(nn.Module):
         return mu#,logvar
         
     def load(path: str):
-    ''' loads an object from a file.
-    '''
+    ''' loads an object from a file. '''
         model_dict = pickle.loads(path)
         return model_dict
+
 
 class DecoderGenerator_image_Res(nn.Module):
     def __init__(self, norm_layer, image_size, output_nc, latent_dim=512):  

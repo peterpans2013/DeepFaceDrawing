@@ -419,7 +419,7 @@ class ToTensor:
 
     def __call__(self, img):
         from torchvison import transforms
-        return transforms.ToTensor(img)
+        return transforms.functional.to_tensor(img)
 
 class GANLoss(nn.Module):
 

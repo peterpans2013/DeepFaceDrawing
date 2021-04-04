@@ -194,7 +194,6 @@ class  EncoderGenerator_Res(nn.Module):
         return mu#,logvar
         
     def load(path: str):
-    ''' loads an object from a file. '''
         model_dict = pickle.loads(path)
         return model_dict
 

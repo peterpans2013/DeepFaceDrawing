@@ -194,7 +194,9 @@ class  EncoderGenerator_Res(nn.Module):
         return mu#,logvar
         
     def load(self, path: str):
-        model_dict = pickle.loads(path)
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
         return model_dict
 
 

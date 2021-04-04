@@ -125,7 +125,7 @@ class ResnetBlock(nn.Module):
             p = 1
         else:
             raise NotImplementedError(('padding [%s] is not implemented' % padding_type))
-        conv_block += [nn.Conv(dim, dim, 3, padding=p), norm_layer(dim), activation]
+        conv_block += [nn.Conv2d(dim, dim, 3, padding=p), norm_layer(dim), activation]
         if use_dropout:
             conv_block += [nn.Dropout(0.5)]
 
@@ -138,7 +138,7 @@ class ResnetBlock(nn.Module):
             p = 1
         else:
             raise NotImplementedError(('padding [%s] is not implemented' % padding_type))
-        conv_block += [nn.Conv(dim, dim, 3, padding=p), norm_layer(dim)]
+        conv_block += [nn.Conv2d(dim, dim, 3, padding=p), norm_layer(dim)]
         return nn.Sequential(*conv_block)
 
     def execute(self, x):
@@ -220,7 +220,7 @@ class DecoderGenerator_image_Res(nn.Module):
 
         # layers_list.append(DecoderBlock(channel_in=64, channel_out=64, kernel_size=4, padding=1, stride=2, output_padding=0)) #96*160
         layers_list.append(nn.ReflectionPad2d(2))
-        layers_list.append(nn.Conv(32,output_nc,kernel_size=5,padding=0))
+        layers_list.append(nn.Conv2d(32,output_nc,kernel_size=5,padding=0))
 
         self.conv = nn.Sequential(*layers_list)
 
@@ -277,7 +277,7 @@ class DecoderGenerator_feature_Res(nn.Module):
 
         # layers_list.append(DecoderBlock(channel_in=64, channel_out=64, kernel_size=4, padding=1, stride=2, output_padding=0)) #96*160
         layers_list.append(nn.ReflectionPad2d(2))
-        layers_list.append(nn.Conv(64,output_nc,kernel_size=5,padding=0))
+        layers_list.append(nn.Conv2d(64,output_nc,kernel_size=5,padding=0))
 
         self.conv = nn.Sequential(*layers_list)
 
@@ -301,7 +301,7 @@ class DecoderBlock(nn.Module):
     def __init__(self, channel_in, channel_out, kernel_size=4, padding=1, stride=2, output_padding=0, norelu=False):
         super(DecoderBlock, self).__init__()
         layers_list = []
-        layers_list.append(nn.ConvTranspose(channel_in, channel_out, kernel_size, padding=padding, stride=stride, output_padding=output_padding))
+        layers_list.append(nn.ConvTranspose2d(channel_in, channel_out, kernel_size, padding=padding, stride=stride, output_padding=output_padding))
         layers_list.append(nn.BatchNorm2d(channel_out, momentum=0.9))
         if (norelu == False):
             layers_list.append(nn.LeakyReLU(1))
@@ -316,7 +316,7 @@ class EncoderBlock(nn.Module):
     def __init__(self, channel_in, channel_out, kernel_size=7, padding=3, stride=4):
         super(EncoderBlock, self).__init__()
         # convolution to halve the dimensions
-        self.conv = nn.Conv(channel_in, channel_out, kernel_size, padding=padding, stride=stride)
+        self.conv = nn.Conv2d(channel_in, channel_out, kernel_size, padding=padding, stride=stride)
         self.bn = nn.BatchNorm2d(channel_out, momentum=0.9)
         self.relu = nn.LeakyReLU(1)
 
@@ -343,11 +343,11 @@ class GlobalGenerator(nn.Module):
         super(GlobalGenerator, self).__init__()
         activation = nn.ReLU()
 
-        model = [nn.ReflectionPad2d(3), nn.Conv(input_nc, ngf, 7, padding=0), norm_layer(ngf), activation]
+        model = [nn.ReflectionPad2d(3), nn.Conv2d(input_nc, ngf, 7, padding=0), norm_layer(ngf), activation]
         ### downsample
         for i in range(n_downsampling):
             mult = (2 ** i)
-            model += [nn.Conv((ngf * mult), ((ngf * mult) * 2), 3, stride=2, padding=1), norm_layer(((ngf * mult) * 2)), activation]
+            model += [nn.Conv2d((ngf * mult), ((ngf * mult) * 2), 3, stride=2, padding=1), norm_layer(((ngf * mult) * 2)), activation]
         
         ### resnet blocks
         mult = (2 ** n_downsampling)
@@ -357,8 +357,8 @@ class GlobalGenerator(nn.Module):
         ### upsample 
         for i in range(n_downsampling):
             mult = (2 ** (n_downsampling - i))
-            model += [nn.ConvTranspose((ngf * mult), int(((ngf * mult) / 2)), 3, stride=2, padding=1, output_padding=1), norm_layer(int(((ngf * mult) / 2))), activation]
-        model += [nn.ReflectionPad2d(3), nn.Conv(ngf, output_nc, 7, padding=0), nn.Tanh()]
+            model += [nn.ConvTranspose2d((ngf * mult), int(((ngf * mult) / 2)), 3, stride=2, padding=1, output_padding=1), norm_layer(int(((ngf * mult) / 2))), activation]
+        model += [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, 7, padding=0), nn.Tanh()]
         self.model = nn.Sequential(*model)
 
         for m in self.modules():

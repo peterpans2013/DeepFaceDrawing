@@ -193,7 +193,7 @@ class  EncoderGenerator_Res(nn.Module):
         # logvar = self.fc_var(ten)
         return mu#,logvar
         
-    def load(path: str):
+    def load(self, path: str):
         model_dict = pickle.loads(path)
         return model_dict
 

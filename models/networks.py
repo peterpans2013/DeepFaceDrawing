@@ -11,34 +11,42 @@ def weights_init(m):
         torch.nn.init.normal_(m.weight, 1.0, 0.02)
         torch.nn.init.zeros_(m.bias)
 
+
 def get_norm_layer(norm_type='instance'):
     if (norm_type == 'batch'):
-        norm_layer = nn.BatchNorm
+        norm_layer = nn.BatchNorm2d
     elif (norm_type == 'instance'):
         norm_layer = nn.InstanceNorm2d
     else:
         raise NotImplementedError(('normalization layer [%s] is not found' % norm_type))
     return norm_layer
 
-class MSELoss:
+
+class mseloss:
     def __init__(self):
         pass
 
     def __call__(self, output, target):
         from torch.nn import MSELoss
-        return mse_loss(output, target)
+        loss = MSELoss()
+        return loss(output, target)
 
-class BCELoss:
+
+class bcsloss:
     def __init__(self):
         pass
 
     def __call__(self, output, target):
         from torch.nn import BCELoss
-        return bce_loss(output, target)
+        loss = BCELoss()
+        return loss(output, target)
+
 
 ############################
 # Model function
 ############################
+
+
 def define_part_encoder(model='mouth', norm='instance', input_nc=1, latent_dim=512):
     norm_layer = get_norm_layer(norm_type=norm)
     image_size = 512
@@ -57,6 +65,7 @@ def define_part_encoder(model='mouth', norm='instance', input_nc=1, latent_dim=5
     print("net_encoder of part "+model+" is:",image_size)
 
     return net_encoder
+
 
 def define_part_decoder(model='mouth', norm='instance', output_nc=1, latent_dim=512):
     norm_layer = get_norm_layer(norm_type=norm)
@@ -97,6 +106,8 @@ def define_feature_decoder(model='mouth', norm='instance', output_nc=1, latent_d
     # print(net_decoder)
     
     return net_decoder
+
+
 def define_G(input_nc, output_nc, ngf, n_downsample_global=3, n_blocks_global=9, norm='instance'):
     norm_layer = get_norm_layer(norm_type=norm)     
     netG = GlobalGenerator(input_nc, output_nc, ngf, n_downsample_global, n_blocks_global, norm_layer)
@@ -125,7 +136,7 @@ class ResnetBlock(nn.Module):
             p = 1
         else:
             raise NotImplementedError(('padding [%s] is not implemented' % padding_type))
-        conv_block += [nn.Conv(dim, dim, 3, padding=p), norm_layer(dim), activation]
+        conv_block += [nn.Conv2d(dim, dim, 3, padding=p), norm_layer(dim), activation]
         if use_dropout:
             conv_block += [nn.Dropout(0.5)]
 
@@ -138,13 +149,14 @@ class ResnetBlock(nn.Module):
             p = 1
         else:
             raise NotImplementedError(('padding [%s] is not implemented' % padding_type))
-        conv_block += [nn.Conv(dim, dim, 3, padding=p), norm_layer(dim)]
+        conv_block += [nn.Conv2d(dim, dim, 3, padding=p), norm_layer(dim)]
         return nn.Sequential(*conv_block)
 
-    def execute(self, x):
+    def forward(self, x):
         # print(x.shape)
         out = (x + self.conv_block(x))
         return out
+
 
 class  EncoderGenerator_Res(nn.Module):
     """docstring for  EncoderGenerator"""
@@ -159,7 +171,7 @@ class  EncoderGenerator_Res(nn.Module):
 
         activation = nn.ReLU()
         padding_type='reflect'
-        norm_layer=nn.BatchNorm
+        norm_layer=nn.BatchNorm2d
 
         # encode
         layers_list.append(EncoderBlock(channel_in=input_nc, channel_out=32, kernel_size=4, padding=1, stride=2))  # 176 176 
@@ -179,18 +191,55 @@ class  EncoderGenerator_Res(nn.Module):
         # self.fc_var = nn.Sequential(nn.Linear(in_features=longsize, out_features=latent_dim))#,
 
         for m in self.modules():
-            weights_init_normal(m)
+            weights_init(m)
 
-    def execute(self, ten):
+    def forward(self, ten):
         # ten = ten[:,:,:]
         # ten2 = jt.reshape(ten,[ten.size()[0],-1])
         # print(ten.shape, ten2.shape)
         ten = self.conv(ten)
-        ten = jt.reshape(ten,[ten.size()[0],-1])
+        ten = torch.reshape(ten,[ten.size()[0],-1])
         # print(ten.shape,self.longsize)
         mu = self.fc_mu(ten)
         # logvar = self.fc_var(ten)
         return mu#,logvar
+
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
+
+
+class EncoderBlock(nn.Module):
+    def __init__(self, channel_in, channel_out, kernel_size=7, padding=3, stride=4):
+        super(EncoderBlock, self).__init__()
+        # convolution to halve the dimensions
+        self.conv = nn.Conv2d(channel_in, channel_out, kernel_size, padding=padding, stride=stride)
+        self.bn = nn.BatchNorm2d(channel_out, momentum=0.9)
+        self.relu = nn.LeakyReLU(1)
+
+    def forward(self, ten, out=False, t=False):
+        # print('ten',ten.shape)
+        # here we want to be able to take an intermediate output for reconstruction error
+        if out:
+            ten = self.conv(ten)
+            ten_out = ten
+            ten = self.bn(ten)
+            ten = self.relu(ten)
+            return (ten, ten_out)
+        else:
+            ten = self.conv(ten)
+            ten = self.bn(ten)
+            # print(ten.shape)
+            ten = self.relu(ten)
+            return ten
+
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
 
 class DecoderGenerator_image_Res(nn.Module):
     def __init__(self, norm_layer, image_size, output_nc, latent_dim=512):  
@@ -202,7 +251,7 @@ class DecoderGenerator_image_Res(nn.Module):
 
         activation = nn.ReLU()
         padding_type='reflect'
-        norm_layer=nn.BatchNorm
+        norm_layer=nn.BatchNorm2d
 
         self.fc = nn.Sequential(nn.Linear(in_features=latent_dim, out_features=longsize))
         layers_list = []
@@ -220,26 +269,29 @@ class DecoderGenerator_image_Res(nn.Module):
 
         # layers_list.append(DecoderBlock(channel_in=64, channel_out=64, kernel_size=4, padding=1, stride=2, output_padding=0)) #96*160
         layers_list.append(nn.ReflectionPad2d(2))
-        layers_list.append(nn.Conv(32,output_nc,kernel_size=5,padding=0))
+        layers_list.append(nn.Conv2d(32,output_nc,kernel_size=5,padding=0))
 
         self.conv = nn.Sequential(*layers_list)
 
         for m in self.modules():
-            weights_init_normal(m)
+            weights_init(m)
 
-    def execute(self, ten):
+    def forward(self, ten):
         # print("in DecoderGenerator, print some shape ")
         # print(ten.size())
         ten = self.fc(ten)
         # print(ten.size())
-        ten = jt.reshape(ten,(ten.size()[0],512, self.latent_size, self.latent_size))
+        ten = torch.reshape(ten,(ten.size()[0],512, self.latent_size, self.latent_size))
         # print(ten.size())
         ten = self.conv(ten)
 
         return ten
 
-    # def __call__(self, *args, **kwargs):
-    #     return super(DecoderGenerator_image_Res, self).__call__(*args, **kwargs)
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
 
 
 class DecoderGenerator_feature_Res(nn.Module):
@@ -252,7 +304,7 @@ class DecoderGenerator_feature_Res(nn.Module):
 
         activation = nn.ReLU()
         padding_type='reflect'
-        norm_layer=nn.BatchNorm
+        norm_layer=nn.BatchNorm2d
 
         self.fc = nn.Sequential(nn.Linear(in_features=latent_dim, out_features=longsize))
         layers_list = []
@@ -277,14 +329,14 @@ class DecoderGenerator_feature_Res(nn.Module):
 
         # layers_list.append(DecoderBlock(channel_in=64, channel_out=64, kernel_size=4, padding=1, stride=2, output_padding=0)) #96*160
         layers_list.append(nn.ReflectionPad2d(2))
-        layers_list.append(nn.Conv(64,output_nc,kernel_size=5,padding=0))
+        layers_list.append(nn.Conv2d(64,output_nc,kernel_size=5,padding=0))
 
         self.conv = nn.Sequential(*layers_list)
 
         for m in self.modules():
-            weights_init_normal(m)
+            weights_init(m)
 
-    def execute(self, ten):
+    def forward(self, ten):
         # print("in DecoderGenerator, print some shape ")
         # print(ten.size())
         ten = self.fc(ten)
@@ -295,46 +347,34 @@ class DecoderGenerator_feature_Res(nn.Module):
 
         return ten
 
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
+
 # decoder block (used in the decoder)
 class DecoderBlock(nn.Module):
 
     def __init__(self, channel_in, channel_out, kernel_size=4, padding=1, stride=2, output_padding=0, norelu=False):
         super(DecoderBlock, self).__init__()
         layers_list = []
-        layers_list.append(nn.ConvTranspose(channel_in, channel_out, kernel_size, padding=padding, stride=stride, output_padding=output_padding))
-        layers_list.append(nn.BatchNorm(channel_out, momentum=0.9))
+        layers_list.append(nn.ConvTranspose2d(channel_in, channel_out, kernel_size, padding=padding, stride=stride, output_padding=output_padding))
+        layers_list.append(nn.BatchNorm2d(channel_out, momentum=0.9))
         if (norelu == False):
             layers_list.append(nn.LeakyReLU(1))
         self.conv = nn.Sequential(*layers_list)
 
-    def execute(self, ten):
+    def forward(self, ten):
         ten = self.conv(ten)
         return ten
 
-# encoder block (used in encoder and discriminator)
-class EncoderBlock(nn.Module):
-    def __init__(self, channel_in, channel_out, kernel_size=7, padding=3, stride=4):
-        super(EncoderBlock, self).__init__()
-        # convolution to halve the dimensions
-        self.conv = nn.Conv(channel_in, channel_out, kernel_size, padding=padding, stride=stride)
-        self.bn = nn.BatchNorm(channel_out, momentum=0.9)
-        self.relu = nn.LeakyReLU(1)
-
-    def execute(self, ten, out=False, t=False):
-        # print('ten',ten.shape)
-        # here we want to be able to take an intermediate output for reconstruction error
-        if out:
-            ten = self.conv(ten)
-            ten_out = ten
-            ten = self.bn(ten)
-            ten = self.relu(ten)
-            return (ten, ten_out)
-        else:
-            ten = self.conv(ten)
-            ten = self.bn(ten)
-            # print(ten.shape)
-            ten = self.relu(ten)
-            return ten
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
+        
 
 class GlobalGenerator(nn.Module):
 
@@ -343,11 +383,11 @@ class GlobalGenerator(nn.Module):
         super(GlobalGenerator, self).__init__()
         activation = nn.ReLU()
 
-        model = [nn.ReflectionPad2d(3), nn.Conv(input_nc, ngf, 7, padding=0), norm_layer(ngf), activation]
+        model = [nn.ReflectionPad2d(3), nn.Conv2d(input_nc, ngf, 7, padding=0), norm_layer(ngf), activation]
         ### downsample
         for i in range(n_downsampling):
             mult = (2 ** i)
-            model += [nn.Conv((ngf * mult), ((ngf * mult) * 2), 3, stride=2, padding=1), norm_layer(((ngf * mult) * 2)), activation]
+            model += [nn.Conv2d((ngf * mult), ((ngf * mult) * 2), 3, stride=2, padding=1), norm_layer(((ngf * mult) * 2)), activation]
         
         ### resnet blocks
         mult = (2 ** n_downsampling)
@@ -357,27 +397,31 @@ class GlobalGenerator(nn.Module):
         ### upsample 
         for i in range(n_downsampling):
             mult = (2 ** (n_downsampling - i))
-            model += [nn.ConvTranspose((ngf * mult), int(((ngf * mult) / 2)), 3, stride=2, padding=1, output_padding=1), norm_layer(int(((ngf * mult) / 2))), activation]
-        model += [nn.ReflectionPad2d(3), nn.Conv(ngf, output_nc, 7, padding=0), nn.Tanh()]
+            model += [nn.ConvTranspose2d((ngf * mult), int(((ngf * mult) / 2)), 3, stride=2, padding=1, output_padding=1), norm_layer(int(((ngf * mult) / 2))), activation]
+        model += [nn.ReflectionPad2d(3), nn.Conv2d(ngf, output_nc, 7, padding=0), nn.Tanh()]
         self.model = nn.Sequential(*model)
 
         for m in self.modules():
-            weights_init_normal(m)
+            weights_init(m)
 
-    def execute(self, input):
+    def forward(self, input):
         return self.model(input)
 
-##############################################################################
-# Losses
-##############################################################################
-
+    def load(self, path: str):
+        with open(path, "rb") as f:
+            s = f.read()
+            model_dict = pickle.loads(s)
+        return model_dict
+        
+        
 class ToTensor:
     def __init__(self):
         pass
 
     def __call__(self, img):
-        from jittor.transform import to_tensor
-        return to_tensor(img)
+        from torchvision.transforms import ToTensor
+        return ToTensor()(img)
+
 
 class GANLoss(nn.Module):
 
@@ -399,7 +443,7 @@ class GANLoss(nn.Module):
         if target_is_real:
             create_label = ((self.real_label_var is None) or (self.real_label_var.numel() != input.numel()))
             if create_label:
-                real_tensor = jt.transform.to_tensor(jt.ones(input.shape))
+                real_tensor = torchvision.transforms.to_tensor(torch.ones(input.shape))
                 # real_tensor = self.Tensor(input.shape).fill_(self.real_label)
                 # self.real_label_var = Variable(real_tensor, requires_grad=False)
                 self.real_label_var = real_tensor.stop_grad()
@@ -408,7 +452,7 @@ class GANLoss(nn.Module):
             create_label = ((self.fake_label_var is None) or (self.fake_label_var.numel() != input.numel()))
             if create_label:
 
-                fake_tensor = jt.transform.to_tensor(jt.zeros(input.shape))
+                fake_tensor = torchvision.transforms.to_tensor(torch.zeros(input.shape))
                 self.fake_label_var = fake_tensor.stop_grad()
             target_tensor = self.fake_label_var
         return target_tensor
@@ -424,5 +468,3 @@ class GANLoss(nn.Module):
         else:
             target_tensor = self.get_target_tensor(input[(- 1)], target_is_real)
             return self.loss(input[(- 1)], target_tensor)
-
-print("Read file Successfully!")

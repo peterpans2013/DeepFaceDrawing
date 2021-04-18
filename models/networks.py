@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import functools
 import numpy as np
+import pickle
 
 def weights_init(m):
     classname = m.__class__.__name__

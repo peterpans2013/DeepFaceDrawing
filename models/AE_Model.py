@@ -75,7 +75,7 @@ class AE_Model(nn.Module):
         input_image = input_image.transpose(2,0,1)
         input_image = np.expand_dims(input_image, axis=0)
         input_image = input_image.astype('float32')
-        input_image = transform.to_tensor(np.array(input_image))
+        input_image = torch.from_numpy(np.array(input_image))
         # print(input_image.shape)
         mus_mouth = self.net_encoder(input_image)
 
@@ -95,7 +95,7 @@ class AE_Model(nn.Module):
 
     def get_inter(self, input_image, nearnN=3, sex=1,w_c=1,random_=-1):
         generated_f = self.get_latent(input_image)
-        generated_f = generated_f.numpy()
+        generated_f = generated_f.detach().numpy()
         
         feature_list = self.feature_list[sex]
         list_len = np.array([feature_list.shape[0]])

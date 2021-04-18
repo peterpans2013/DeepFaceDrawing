@@ -142,7 +142,7 @@ class ResnetBlock(nn.Module):
         conv_block += [nn.Conv2d(dim, dim, 3, padding=p), norm_layer(dim)]
         return nn.Sequential(*conv_block)
 
-    def execute(self, x):
+    def forward(self, x):
         # print(x.shape)
         out = (x + self.conv_block(x))
         return out
@@ -182,14 +182,14 @@ class  EncoderGenerator_Res(nn.Module):
         for m in self.modules():
             weights_init_normal(m)
 
-    def forward(self, ten):
+    def forward(self, x):
         # ten = ten[:,:,:]
         # ten2 = jt.reshape(ten,[ten.size()[0],-1])
         # print(ten.shape, ten2.shape)
-        ten = self.conv(ten)
-        ten = torch.reshape(ten,[ten.size()[0],-1])
+        x = self.conv(x)
+        # x = torch.reshape(x,[x.size()[0],-1])
         # print(ten.shape,self.longsize)
-        mu = self.fc_mu(ten)
+        mu = self.fc_mu(x)
         # logvar = self.fc_var(ten)
         return mu#,logvar
         
@@ -235,7 +235,7 @@ class DecoderGenerator_image_Res(nn.Module):
         for m in self.modules():
             weights_init_normal(m)
 
-    def execute(self, ten):
+    def forward(self, ten):
         # print("in DecoderGenerator, print some shape ")
         # print(ten.size())
         ten = self.fc(ten)
@@ -298,7 +298,7 @@ class DecoderGenerator_feature_Res(nn.Module):
         for m in self.modules():
             weights_init_normal(m)
 
-    def execute(self, ten):
+    def forward(self, ten):
         # print("in DecoderGenerator, print some shape ")
         # print(ten.size())
         ten = self.fc(ten)
@@ -328,7 +328,7 @@ class DecoderBlock(nn.Module):
             layers_list.append(nn.LeakyReLU(1))
         self.conv = nn.Sequential(*layers_list)
 
-    def execute(self, ten):
+    def forward(self, ten):
         ten = self.conv(ten)
         return ten
 
@@ -344,12 +344,13 @@ class EncoderBlock(nn.Module):
     def __init__(self, channel_in, channel_out, kernel_size=7, padding=3, stride=4):
         super(EncoderBlock, self).__init__()
         # convolution to halve the dimensions
-        self.conv = nn.Conv2d(channel_in, channel_out, kernel_size, padding=padding, stride=stride)
+        print(channel_in)
+        self.conv = nn.Conv2d(channel_in, channel_out, kernel_size, stride=stride, padding=padding)
         self.bn = nn.BatchNorm2d(channel_out, momentum=0.9)
         self.relu = nn.LeakyReLU(1)
 
-    def execute(self, ten, out=False, t=False):
-        # print('ten',ten.shape)
+    def forward(self, ten, out=False, t=False):
+        print('ten',ten.shape)
         # here we want to be able to take an intermediate output for reconstruction error
         if out:
             ten = self.conv(ten)
@@ -358,9 +359,15 @@ class EncoderBlock(nn.Module):
             ten = self.relu(ten)
             return (ten, ten_out)
         else:
+            ten = ten.unsqueeze(1)
+            print(ten.shape)
             ten = self.conv(ten)
+            print(ten.shape)
+            ten = torch.squeeze(ten)
+            print(ten.shape)
+            ten = ten.unsqueeze(1)
             ten = self.bn(ten)
-            # print(ten.shape)
+            print(ten.shape)
             ten = self.relu(ten)
             return ten
 
@@ -399,7 +406,7 @@ class GlobalGenerator(nn.Module):
         for m in self.modules():
             weights_init_normal(m)
 
-    def execute(self, input):
+    def forward(self, input):
         return self.model(input)
 
     def load(self, path: str):

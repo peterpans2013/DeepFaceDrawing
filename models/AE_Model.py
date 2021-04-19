@@ -14,6 +14,7 @@ import torchvision.transforms as transforms
 # import heapq
 from numpy.linalg import solve
 import time
+import jittor as jt
 
 class AE_Model(nn.Module):
     def name(self):
@@ -97,42 +98,45 @@ class AE_Model(nn.Module):
         generated_f = generated_f.detach().numpy()
         
         feature_list = self.feature_list[sex]
-        list_len = np.array([feature_list.shape[0]])
+        list_len = jt.array([feature_list.shape[0]])
         # a = jt.random((n,3))
         ""
-        b = [torch.from_numpy(np.array(feature_list)), torch.from_numpy(np.array(generated_f)), torch.from_numpy(list_len)]
+        # b = [torch.from_numpy(np.array(feature_list)), torch.from_numpy(np.array(generated_f)), torch.from_numpy(list_len)]
         # a = jt.random((n,3))
-        # b = jt.code([1, nearnN], 
-        #       "int32", [jt.array(feature_list),jt.array(generated_f), list_len], 
-        # cpu_header="#include <algorithm>",
-        # cpu_src="""
-        #       using namespace std;
-        #       auto n=out_shape0, k=out_shape1;
-        #       int N=@in2(0);
+        b = jt.code([1, nearnN], 
+              "int32", [jt.array(feature_list),jt.array(generated_f), list_len], 
+        cpu_header="#include <algorithm>",
+        cpu_src="""
+              using namespace std;
+              auto n=out_shape0, k=out_shape1;
+              int N=@in2(0);
               
-        #       // 使用openmp实现自动并行化
-        #         // 存储k近邻的距离和下标
-        #         vector<pair<float,int>> id(N);
-        #       #pragma omp parallel for
-        #         for (int j=0; j<N; j++) {
-        #             auto dis = 0.0;
-        #             for (int d=0; d<512; d++)
-        #             {
-        #               auto dx = @in1(0,d)-@in0(j,d);
-        #               dis = dis +dx*dx;
-        #             }
-        #             id[j] = {dis, j};
-        #         }
-        #         // 使用c++算法库的nth_element排序
-        #         nth_element(id.begin(), 
-        #           id.begin()+k, id.end());
-        #         // 将下标输出到计图的变量中
-        #         for (int j=0; j<k; j++)
-        #           @out(0,j) = id[j].second;
-        #       """
-
-        idx_sort = b[0].detach().numpy()
-
+              // 使用openmp实现自动并行化
+                // 存储k近邻的距离和下标
+                vector<pair<float,int>> id(N);
+              #pragma omp parallel for
+                for (int j=0; j<N; j++) {
+                    auto dis = 0.0;
+                    for (int d=0; d<512; d++)
+                    {
+                      auto dx = @in1(0,d)-@in0(j,d);
+                      dis = dis +dx*dx;
+                    }
+                    id[j] = {dis, j};
+                }
+                // 使用c++算法库的nth_element排序
+                nth_element(id.begin(), 
+                  id.begin()+k, id.end());
+                // 将下标输出到计图的变量中
+                for (int j=0; j<k; j++)
+                  @out(0,j) = id[j].second;
+              """
+        print(f"b value: {b}")
+        print(f"b type: {type(b)}")
+        idx_sort = b[0].numpy()
+        print(f"idx_sort value: {idx_sort}")
+        print(f"idx_sort type: {type(idx_sort)}")
+        
         if nearnN==1:
             vec_mu = feature_list[idx_sort[0]]
             vec_mu = vec_mu * w_c + (1 - w_c) * generated_f

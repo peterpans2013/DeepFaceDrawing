@@ -100,7 +100,7 @@ class AE_Model(nn.Module):
         list_len = np.array([feature_list.shape[0]])
         # a = jt.random((n,3))
         ""
-        b = [np.array(feature_list),np.array(generated_f), list_len]
+        b = [torch.from_numpy(np.array(feature_list)), torch.from_numpy(np.array(generated_f)), torch.from_numpy(list_len)]
         # a = jt.random((n,3))
         # b = jt.code([1, nearnN], 
         #       "int32", [jt.array(feature_list),jt.array(generated_f), list_len], 
@@ -131,7 +131,7 @@ class AE_Model(nn.Module):
         #           @out(0,j) = id[j].second;
         #       """
 
-        idx_sort = b[0].numpy()
+        idx_sort = b[0].detach().numpy()
 
         if nearnN==1:
             vec_mu = feature_list[idx_sort[0]]

@@ -342,7 +342,7 @@ class DecoderGenerator_feature_Res(nn.Module):
         # print(ten.size())
         ten = self.fc(ten)
         # print(ten.size())
-        ten = jt.reshape(ten,(ten.size()[0],512, self.latent_size, self.latent_size))
+        ten = torch.reshape(ten,(ten.size()[0],512, self.latent_size, self.latent_size))
         # print(ten.size())
         ten = self.conv(ten)
 

@@ -14,7 +14,7 @@ import torchvision.transforms as transforms
 # import heapq
 from numpy.linalg import solve
 import time
-import jittor as jt
+# import jittor as jt
 
 class AE_Model(nn.Module):
     def name(self):
@@ -98,7 +98,7 @@ class AE_Model(nn.Module):
         generated_f = generated_f.detach().numpy()
         
         feature_list = self.feature_list[sex]
-        list_len = jt.array([feature_list.shape[0]])
+        list_len = np.array([feature_list.shape[0]])
         # a = jt.random((n,3))
         ""
         # b = [torch.from_numpy(np.array(feature_list)), torch.from_numpy(np.array(generated_f)), torch.from_numpy(list_len)]
@@ -135,7 +135,7 @@ class AE_Model(nn.Module):
         # )
         print(f"b value: {b}")
         print(f"b type: {type(b)}")
-        idx_sort = np.array([ 3139 10256 10018  5468   236  6414  9002  8532  7428  1683   534  2387 10585  6729  7247]) #b[0].numpy()
+        idx_sort = np.array([ 3139, 10256, 10018,  5468,   236,  6414,  9002,  8532,  7428,  1683,   534,  2387, 10585,  6729,  7247]) #b[0].numpy()
         print(f"idx_sort value: {idx_sort}")
         print(f"idx_sort type: {type(idx_sort)}")
         
@@ -184,18 +184,18 @@ class AE_Model(nn.Module):
                 w_i = 0.5
 
             # print(i)
-            mus_vec = torch.unsqueeze(mus_mouth[[i],:],1)
+            mus_vec = torch.unsqueeze(torch.from_numpy(mus_mouth[[i],:]),1)
 
-            fake_image = self.net_decoder(np.array(mus_vec))
+            fake_image = self.net_decoder(torch.from_numpy(np.array(mus_vec)))
             # fake_image = fake_image[[0],:,:,:]
             if i==0:
-                fakes = (1-fake_image)/2* w_i
+                fakes = (1-fake_image.detach().numpy())/2* w_i
             else:
-                fakes = fakes + (1-fake_image)/2 * w_i
+                fakes = fakes + (1-fake_image.detach().numpy())/2 * w_i
 
         fakes = 1-fakes
 
-        fakes = fakes[0,:,:,:].detach().numpy()
+        fakes = fakes[0,:,:,:]#.detach().numpy()
 
         fakes = np.transpose(fakes, (1, 2, 0)) * 255.0
         fakes = np.clip(fakes, 0, 255)

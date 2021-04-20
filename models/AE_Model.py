@@ -78,7 +78,7 @@ class AE_Model(nn.Module):
         input_image = torch.from_numpy(np.array(input_image))
         # print(input_image.shape)
         mus_mouth = self.net_encoder(input_image)
-
+        
         return mus_mouth
 
     def get_image(self, latent_vec):
@@ -131,6 +131,7 @@ class AE_Model(nn.Module):
                 for (int j=0; j<k; j++)
                   @out(0,j) = id[j].second;
               """
+        )
         print(f"b value: {b}")
         print(f"b type: {type(b)}")
         idx_sort = b[0].numpy()

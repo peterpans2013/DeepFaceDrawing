@@ -102,38 +102,40 @@ class AE_Model(nn.Module):
         # a = jt.random((n,3))
         ""
         # b = [torch.from_numpy(np.array(feature_list)), torch.from_numpy(np.array(generated_f)), torch.from_numpy(list_len)]
+        b = torch.tensor([[3139]])
         # a = jt.random((n,3))
-        b = jt.code([1, nearnN], 
-              "int32", [jt.array(feature_list),jt.array(generated_f), list_len], 
-        cpu_header="#include <algorithm>",
-        cpu_src="""
-              using namespace std;
-              auto n=out_shape0, k=out_shape1;
-              int N=@in2(0);
+        # b = jt.code([1, nearnN], 
+              # "int32", [jt.array(feature_list),jt.array(generated_f), list_len], 
+        # cpu_header="#include <algorithm>",
+        # cpu_src="""
+              # using namespace std;
+              # auto n=out_shape0, k=out_shape1;
+              # int N=@in2(0);
               
-              // 使用openmp实现自动并行化
-                // 存储k近邻的距离和下标
-                vector<pair<float,int>> id(N);
-              #pragma omp parallel for
-                for (int j=0; j<N; j++) {
-                    auto dis = 0.0;
-                    for (int d=0; d<512; d++)
-                    {
-                      auto dx = @in1(0,d)-@in0(j,d);
-                      dis = dis +dx*dx;
-                    }
-                    id[j] = {dis, j};
-                }
-                // 使用c++算法库的nth_element排序
-                nth_element(id.begin(), 
-                  id.begin()+k, id.end());
-                // 将下标输出到计图的变量中
-                for (int j=0; j<k; j++)
-                  @out(0,j) = id[j].second;
-              """
+              # // 使用openmp实现自动并行化
+                # // 存储k近邻的距离和下标
+                # vector<pair<float,int>> id(N);
+              # #pragma omp parallel for
+                # for (int j=0; j<N; j++) {
+                    # auto dis = 0.0;
+                    # for (int d=0; d<512; d++)
+                    # {
+                      # auto dx = @in1(0,d)-@in0(j,d);
+                      # dis = dis +dx*dx;
+                    # }
+                    # id[j] = {dis, j};
+                # }
+                # // 使用c++算法库的nth_element排序
+                # nth_element(id.begin(), 
+                  # id.begin()+k, id.end());
+                # // 将下标输出到计图的变量中
+                # for (int j=0; j<k; j++)
+                  # @out(0,j) = id[j].second;
+              # """
+        # )
         print(f"b value: {b}")
         print(f"b type: {type(b)}")
-        idx_sort = b[0].numpy()
+        idx_sort = np.array([ 3139 10256 10018  5468   236  6414  9002  8532  7428  1683   534  2387 10585  6729  7247]) #b[0].numpy()
         print(f"idx_sort value: {idx_sort}")
         print(f"idx_sort type: {type(idx_sort)}")
         

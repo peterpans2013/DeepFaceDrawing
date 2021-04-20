@@ -132,11 +132,11 @@ class AE_Model(nn.Module):
                   @out(0,j) = id[j].second;
               """
         )
-        print(f"b value: {b}")
-        print(f"b type: {type(b)}")
+        # print(f"b value: {b}")
+        # print(f"b type: {type(b)}")
         idx_sort = b[0].numpy()
-        print(f"idx_sort value: {idx_sort}")
-        print(f"idx_sort type: {type(idx_sort)}")
+        # print(f"idx_sort value: {idx_sort}")
+        # print(f"idx_sort type: {type(idx_sort)}")
         
         if nearnN==1:
             vec_mu = feature_list[idx_sort[0]]
@@ -183,9 +183,10 @@ class AE_Model(nn.Module):
                 w_i = 0.5
 
             # print(i)
-            mus_vec = torch.unsqueeze(mus_mouth[[i],:],1)
+            mus_vec = torch.unsqueeze(torch.from_numpy(mus_mouth[[i],:]),1)
 
-            fake_image = self.net_decoder(np.array(mus_vec))
+            fake_image = self.net_decoder(torch.from_numpy(np.array(mus_vec)))
+            fake_image = fake_image.detach().numpy()
             # fake_image = fake_image[[0],:,:,:]
             if i==0:
                 fakes = (1-fake_image)/2* w_i
@@ -194,7 +195,7 @@ class AE_Model(nn.Module):
 
         fakes = 1-fakes
 
-        fakes = fakes[0,:,:,:].detach().numpy()
+        fakes = fakes[0,:,:,:]#.detach().numpy()
 
         fakes = np.transpose(fakes, (1, 2, 0)) * 255.0
         fakes = np.clip(fakes, 0, 255)
